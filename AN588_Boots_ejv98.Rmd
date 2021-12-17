@@ -1,0 +1,120 @@
+---
+title: "AN588_Boots_ejv98"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Homework 5: Boots for Days
+
+## Bootstrapping Standard Errors and CIs for Linear Models 
+
+When we initially discussed the central limit theorem and confidence intervals, we showed how we could use bootstrapping to estimate standard errors and confidence intervals around certain parameter values, like the mean. Using bootstrapping, we could also do the same for estimating standard errors and CIs around regression parameters, such as β coefficients.
+
+```{r}
+library(curl)
+```
+
+[1] Using the “KamilarAndCooperData.csv” dataset, run a linear regression looking at log(HomeRange_km2) in relation to log(Body_mass_female_mean) and report your β coeffiecients (slope and intercept).
+
+```{r}
+d <- curl('https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/KamilarAndCooperData.csv')
+d <- read.csv(d, stringsAsFactors = FALSE, header = TRUE)
+```
+
+```{r}
+x <- log(d$Body_mass_female_mean)
+y <- log(d$HomeRange_km2)
+```
+
+```{r}
+m <- lm(y ~ x)
+summary(m)
+```
+
+```{r}
+c <- coef(m)
+c
+```
+
+# This generates a sampling distribution for each β coefficient.
+
+```{r}
+set.seed(1)
+i.set <- NULL
+s.set <- NULL
+n <- 50
+for (i in 1:1000) {
+    data <- d[sample(1:nrow(d), n, replace = TRUE),]
+   #log transform the variables
+    y <- log(data$HomeRange_km2)
+    x <- log(data$Body_mass_female_mean)
+    #Run a regression and extract the coefficients 
+    a <- as.data.frame(coef(lm(y~x)))
+    #Place the coefficients into their sets 
+    i.set[i] <- a[1,] 
+    s.set[i] <- a[2,] 
+}
+```
+
+
+#Estimate the standard error for each of your β coefficients as the standard deviation of the sampling distribution from your bootstrap 
+
+```{r}
+sd(i.set)
+sd(s.set)
+```
+
+#How does the former compare to the SE estimated from your entire dataset using the formula for standard error implemented in lm().
+
+```{r}
+f <- as.data.frame(coef(summary(m)))
+f[1,2] #intercept standard error estimate
+f[2,2] #slope standard error estimate
+```
+
+Determine the 95% CI for each of your β coefficients based on the appropriate quantiles from your sampling distribution.
+
+```{r}
+quantile(i.set, c(0.025, 0.975))
+quantile(s.set, c(0.025, 0.975))
+```
+
+ The estimate of ~ -9 for the intercept from the entire data set fits into this confidence interval
+ 
+ The estimate of ~ 1 for the slope from the entire data set fits into this confidence interval
+
+# How does the latter compare to the 95% CI estimated from your entire dataset?
+
+```{r}
+confint(m, level = .95)
+```
+
+# Challenges 
+
+1. Bootstrapping estimates. I was getting things separate from the model. 
+
+
+
